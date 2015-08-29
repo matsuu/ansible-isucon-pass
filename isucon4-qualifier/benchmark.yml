@@ -1,0 +1,9 @@
+- hosts: all
+  sudo: yes
+  sudo_user: isucon
+  tasks:
+    - command: ./benchmarker bench --workload "16"
+      register: result
+      args:
+        chdir: /home/isucon
+    - debug: var=result

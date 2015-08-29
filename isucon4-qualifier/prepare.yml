@@ -1,0 +1,29 @@
+- hosts: all
+  sudo: yes
+  tasks:
+    - sysctl: name=net.ipv4.ip_local_port_range value="1024 65535" state=present
+      ignore_errors: yes
+    - copy: src=files/etc/nginx/nginx.conf dest=/etc/nginx/
+      notify: restart nginx
+    - copy: src=files/etc/supervisord.conf dest=/etc/
+      notify: reload supervisor
+    - copy: src=files/home/isucon/env.sh dest=/home/isucon/ mode=a+x
+      sudo_user: isucon
+    - copy: src=files/home/isucon/init.sh dest=/home/isucon/ mode=a+x
+      sudo_user: isucon
+    - copy: src=files/home/isucon/webapp/go/db.go dest=/home/isucon/webapp/go/
+      sudo_user: isucon
+      notify: build go
+    - copy: src=files/home/isucon/webapp/go/main.go dest=/home/isucon/webapp/go/
+      sudo_user: isucon
+      notify: build go
+  handlers:
+    - name: restart nginx
+      service: name=nginx state=restarted
+    - name: build go
+      command: /home/isucon/env.sh ./build.sh
+      notify: reload supervisor
+      args:
+        chdir: /home/isucon/webapp/go
+    - name: reload supervisor
+      command: supervisorctl reload
